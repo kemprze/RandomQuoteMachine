@@ -1,3 +1,6 @@
+const { createStore } = Redux;
+const { Provider, connect } = ReactRedux;
+
 // constants
 const inspirationalQuotes = [
   { quote: "The best way to get started is to quit talking and begin doing.", author: "Walt Disney" },
@@ -58,7 +61,9 @@ const inspirationalQuotes = [
         return (
             <div className="container-fluid">
               <Header />
-               <QuoteFrame />
+            <Provider store={store}>
+               <ConnectedQuoteFrame />
+            </Provider>
               <Footer />
             </div>
         )
@@ -75,26 +80,19 @@ const inspirationalQuotes = [
     // quote window
     class QuoteFrame extends React.Component {
         constructor(props) {
-            super(props);
-            this.state = {
-                currentQuote: inspirationalQuotes[getRandomIndex()].quote,
-              currentAuthor: inspirationalQuotes[getRandomIndex()].author
-            }
+            super(props)
           
           this.handleClick = this.handleClick.bind(this);
         }
     
-      
       handleClick() {
-        const newIndex = getRandomIndex();
-        this.setState({currentQuote: inspirationalQuotes[newIndex].quote,
-                     currentAuthor: inspirationalQuotes[newIndex].author})
+  this.props.showRandomQuote();
       }
 
         render() {
             return (
-              <div className="quote-window"><div className="quote-block well"><p>{this.state.currentQuote}</p>
-                <p>{this.state.currentAuthor}</p></div>
+              <div className="quote-window"><div className="quote-block well"><p>{this.props.currentQuote}</p>
+                <p style={{fontStyle: "italic", textAlign: "right"}}>{this.props.currentAuthor}</p></div>
                 <Button handleClick={this.handleClick} />
                 </div> // here to inject the <p></p> with the quote, will have to figure it out later
             )
@@ -129,17 +127,51 @@ const Footer = function() {
 
 const getRandomIndex = () =>  Math.floor(Math.random() * inspirationalQuotes.length);
 
-// logic
-// picks a random index between 0 and 49
-
 // REDUX
+  // define an action type
 
+const RANDOMQUOTE = 'RANDOMQUOTE';
+// defining action
+
+const showRandomQuote = () => {
+  return {
+  type: RANDOMQUOTE
+  }
+}
+
+// defining the intial store state
+const initialState = {
+  currentQuote: inspirationalQuotes[0].quote,
+  currentAuthor: inspirationalQuotes[0].author
+}
+ 
+// defining reducer
+const randomQuoteReducer = (state = initialState, action) => {
+  switch (action.type) {
+    case RANDOMQUOTE:
+      const index = getRandomIndex();
+      return {currentQuote: inspirationalQuotes[index].quote, currentAuthor: inspirationalQuotes[index].author};
+    default:
+      return state
+        }
+}
+
+  const store = Redux.createStore(randomQuoteReducer);
 // LINKING REACT WITH REDUX
+const mapStateToProps = (state) => {
+  return {currentQuote: state.currentQuote,
+  currentAuthor: state.currentAuthor}
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return {showRandomQuote: () => dispatch(showRandomQuote())}
+}
 
 // RENDERING
           
+const ConnectedQuoteFrame = connect(mapStateToProps, mapDispatchToProps)(QuoteFrame);
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded, starting React render");
   ReactDOM.render(<MainBody />, document.querySelector(".react-elements"));
 });
-
